@@ -32,11 +32,23 @@ data = {
 }
 
 # loads context
+CONTEXT_FILE = "context.json"
+
 def load_context():
-    global context
-    if os.path.exists("context.json"):
-        with open("context.json", "r") as file:
-            context = json.load(file)
+    global data
+    try:
+        if os.path.exists("context.json"):
+            with open(CONTEXT_FILE, "r") as file:
+                data["context"] = json.load(file)
+    except json.JSONDecodeError:
+        print("Error loading context file. Starting fresh.")
+        data["context"] = {
+            "name": None,
+            "location": None,
+            "preferences": [],
+            "last_query": None
+        }
+              
 
 # saves context to file
 def save_context():
