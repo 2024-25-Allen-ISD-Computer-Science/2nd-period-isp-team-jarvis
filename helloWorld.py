@@ -52,8 +52,8 @@ def load_context():
 
 # saves context to file
 def save_context():
-    with open("context.json", "w") as file:
-        json.dump(context, file)
+    with open(CONTEXT_FILE, "w") as file:
+        json.dump(data["context"], file, indent=4)
 
 # Functions
 def speak(text):
