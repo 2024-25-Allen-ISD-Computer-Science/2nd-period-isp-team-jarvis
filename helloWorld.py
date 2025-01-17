@@ -16,7 +16,7 @@ tts_engine.setProperty("rate", 150)
 tts_engine.setProperty("volume", 0.9)
 
 # -- NEED TO CHANGE TO GEMINI
-openai.api_key = "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"
+openai.api_key = "SECRET"
 
 # global vars
 to_do_list = []
