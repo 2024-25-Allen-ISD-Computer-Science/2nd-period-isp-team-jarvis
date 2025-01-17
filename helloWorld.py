@@ -8,23 +8,27 @@ from datetime import datetime
 import os
 
 r_audio = sr.Recognizer()
+r_audio.energy_threshold = 4000
+r_audio.dynamic_energy_threshold = True
+
 tts_engine = pyttsx3.init()
+tts_engine.setProperty("rate", 200)
+tts_engine.setProperty("volume", 1.0)
+
 nlp = spacy.load("en_core_web_sm")
 
-# text to speech engine
-tts_engine.setProperty("rate", 150)
-tts_engine.setProperty("volume", 0.9)
-
-# -- NEED TO CHANGE TO GEMINI
+# -- NEED TO CHANGE TO GEMINI - need to change the functions and the main logic as well to use the new API
 openai.api_key = "SECRET"
 
 # global vars
-to_do_list = []
-context = {
-    "name": None,
-    "location": None,
-    "preferences": [],
-    "last_query": None
+data = {
+    "to_do_list": [],
+    "context": {
+        "name": None,
+        "location": None,
+        "preferences": [],
+        "last_query": None
+    }
 }
 
 # loads context
