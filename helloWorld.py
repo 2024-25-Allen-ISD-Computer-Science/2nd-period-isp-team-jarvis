@@ -6,6 +6,7 @@ import spacy
 import json
 from datetime import datetime
 import os
+import google.generativeai as genai
 
 r_audio = sr.Recognizer()
 r_audio.energy_threshold = 4000
@@ -33,7 +34,7 @@ data = {
 
 # loads context
 CONTEXT_FILE = "context.json"
-
+    
 def load_context():
     global data
     try:
@@ -63,22 +64,24 @@ def speak(text):
 
 def listen():
     """Capture audio input from the user."""
-    with sr.Microphone() as source:
-        r_audio.adjust_for_ambient_noise(source, duration=0.5)
+    with sr.Microphone as source:
         print("Listening...")
-        audio = r_audio.listen(source)
-        try:
-            query = r_audio.recognize_google(audio, language='en-US')
-            print(f"You said: {query}")
-            return query
-        except sr.UnknownValueError:
-            print("Could not understand audio")
-            speak("I didn't catch that. Could you please repeat?")
-            return None
-        except sr.RequestError:
-            print("Error with the Google API")
-            speak("Sorry, there was an error with the Google API.")
-            return None
+        audio = r_audio.listen(source, timeout=5, phrase_time_limit=8)
+    try:
+        query = r_audio.recognize_google(audio, language="en-US")
+        print(f"You said: {query}")
+        return query.lower()
+    except sr.UnknownValueError:
+        print("Could not understand audio.")
+        speak("I'm sorry, I couldn't understand you.")
+        return ""
+    except sr.RequestError:
+        print("Error with Google API")
+        speak("I'm sorry, due to technical issues, I can't respond right now.")
+        return ""
+    except sr.WaitTimeoutError:
+        print("No speech detected within the timeout period.")
+        return ""
 
 def gpt_search(query):
     """Send the query to OpenAI GPT for processing."""
@@ -105,21 +108,15 @@ def dynamic_greeting():
     else:
         return "Good evening! What can I help you with?"
 
+
 def dynamic_response(phrase_type):
-    """Generate random dynamic responses based on the context."""
-    if phrase_type == "greeting":
-        greetings = ["Hi there!", "Hello!", "Hey, how’s it going?"]
-        return random.choice(greetings)
-    elif phrase_type == "acknowledge":
-        acknowledgments = ["Sure!", "Got it!", "Okay!"]
-        return random.choice(acknowledgments)
-    elif phrase_type == "ask_followup":
-        follow_up_questions = [
-            "Would you like to know more about that?",
-            "Do you need anything else?",
-            "Is there anything else I can help with?"
-        ]
-        return random.choice(follow_up_questions)
+    """ Generates a random dynamic reponse"""
+    responses = {
+        "greeting" = ["Hi, there!", "Hello!", "Hey!", "Hey, good to see you back!"],
+        "acknowledge" = ["Got it!", "Sure thing!", "Understood!", "Alright!"],
+        "ask_followup" = ["Is there anything else I can help with?", "Would you like to know more?", "What else can I assist you with?"]
+    }
+    return random.choice(responses.get(phrase_type, [""]))
 
 def manage_todo(query):
     """Handle the to-do list actions based on user query."""
