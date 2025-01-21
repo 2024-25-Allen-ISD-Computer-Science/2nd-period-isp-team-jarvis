@@ -112,54 +112,55 @@ def dynamic_greeting():
 def dynamic_response(phrase_type):
     """ Generates a random dynamic reponse"""
     responses = {
-        "greeting" = ["Hi, there!", "Hello!", "Hey!", "Hey, good to see you back!"],
-        "acknowledge" = ["Got it!", "Sure thing!", "Understood!", "Alright!"],
-        "ask_followup" = ["Is there anything else I can help with?", "Would you like to know more?", "What else can I assist you with?"]
+        "greeting" : ["Hi, there!", "Hello!", "Hey!", "Hey, good to see you back!"],
+        "acknowledge" : ["Got it!", "Sure thing!", "Understood!", "Alright!"],
+        "ask_followup" : ["Is there anything else I can help with?", "Would you like to know more?", "What else can I assist you with?"]
     }
     return random.choice(responses.get(phrase_type, [""]))
 
 def manage_todo(query):
-    """Handle the to-do list actions based on user query."""
-    global to_do_list
-
-    if "add" in query .lower():
+    """Handles to-do list with better clarity and error handling."""
+    
+    if "add" in query:
         speak("What task would you like to add?")
         task = listen()
         if task:
-            to_do_list.append(task)
-            return f"Task '{task}' added to your to-do list."
+            data["to_do_list"].append(task)
+            return f"Task '{task}' added."
         else:
-            return "I couldn't hear the task clearly. Please try again."
+            return "Task not added. I didn't catch the task."
 
-    elif "show" in query.lower() or "view" in query.lower():
-        if not to_do_list:
-            return "Your to-do list is currently empty."
-        tasks = "\n".join([f"{i + 1}. {task}" for i, task in enumerate(to_do_list)])
-        return f"Here are your tasks:\n{tasks}"
+    elif any(word in query for word in ["show", "view", "display"]):
+        if not data["to_do_list"]:
+            return "Your to-do list is empty."
+        tasks = "\n".join(
+            [f"{i+1}. {task}" for i, task in enumerate(data["to_do_list"])]
+        )
+        return f"Your tasks:\n{tasks}"
 
-    elif "remove" in query.lower() or "complete" in query.lower():
-        if not to_do_list:
-            return "Your to-do list is empty. There's nothing to remove."
-        speak("Which task would you like to remove? Please say the number.")
-        tasks = "\n".join([f"{i + 1}. {task}" for i, task in enumerate(to_do_list)])
-        speak(f"Here are your tasks:\n{tasks}")
-        task_number = listen()
+    elif any(word in query for word in ["remove", "complete", "delete"]):
+        if not data["to_do_list"]:
+            return "Your to-do list is empty."
+        speak("Which task to remove? Say the number.")
+        tasks_str = "\n".join([f"{i+1}. {task}" for i, task in enumerate(data["to_do_list"])])
+        speak(tasks_str)
         try:
-            task_index = int(task_number) - 1
-            if 0 <= task_index < len(to_do_list):
-                removed_task = to_do_list.pop(task_index)
-                return f"Task '{removed_task}' removed from your to-do list."
+            task_num = listen()
+            task_index = int(task_num) - 1
+            if 0 <= task_index < len(data["to_do_list"]):
+                removed_task = data["to_do_list"].pop(task_index)
+                return f"Task '{removed_task}' removed."
             else:
-                return "That task number is not valid."
+                return "Invalid task number."
         except ValueError:
-            return "I couldn't understand the task number. Please try again."
-
-    elif "clear" in query.lower():
-        to_do_list.clear()
-        return "Your to-do list has been cleared."
+            return "Invalid input. Please say a number."
+    
+    elif "clear" in query:
+        data["to_do_list"].clear()
+        return "To-do list cleared."
 
     else:
-        return "I didn't understand your request regarding the to-do list. Please try saying add, show, remove, or clear."
+        return "I didn't understand your request for the to-do list. You can add, show, remove, or clear tasks."
 
 def process_query(query):
     """Process the user query and handle commands."""
