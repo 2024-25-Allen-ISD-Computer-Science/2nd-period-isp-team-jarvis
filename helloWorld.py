@@ -6,65 +6,64 @@ import spacy
 import json
 from datetime import datetime
 import os
-import google.generativeai as genai
 
 r_audio = sr.Recognizer()
 r_audio.energy_threshold = 4000
 r_audio.dynamic_energy_threshold = True
 
 tts_engine = pyttsx3.init()
-tts_engine.setProperty("rate", 200)
+tts_engine.setProperty("rate", 175)
 tts_engine.setProperty("volume", 1.0)
 
 nlp = spacy.load("en_core_web_sm")
 
-# -- NEED TO CHANGE TO GEMINI - need to change the functions and the main logic as well to use the new API
-openai.api_key = "SECRET"
+# Replace with your actual OpenAI API key
+openai.api_key = "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"
 
-# global vars
+# Global variables using a dictionary for better organization
 data = {
     "to_do_list": [],
     "context": {
         "name": None,
         "location": None,
         "preferences": [],
-        "last_query": None
-    }
+        "last_query": None,
+    },
 }
 
-# loads context
+# Context Management
 CONTEXT_FILE = "context.json"
-    
+
 def load_context():
+    """Loads context from a JSON file."""
     global data
     try:
-        if os.path.exists("context.json"):
+        if os.path.exists(CONTEXT_FILE):
             with open(CONTEXT_FILE, "r") as file:
                 data["context"] = json.load(file)
     except json.JSONDecodeError:
-        print("Error loading context file. Starting fresh.")
+        print("Error decoding JSON from context file. Using default context.")
         data["context"] = {
             "name": None,
             "location": None,
             "preferences": [],
             "last_query": None
         }
-              
 
-# saves context to file
 def save_context():
+    """Saves the current context to a JSON file."""
     with open(CONTEXT_FILE, "w") as file:
         json.dump(data["context"], file, indent=4)
 
-# Functions
+# Speech-to-Text and Text-to-Speech
 def speak(text):
     """Convert text to speech."""
     tts_engine.say(text)
     tts_engine.runAndWait()
 
 def listen():
-    """Capture audio input from the user."""
-    with sr.Microphone as source:
+    """Capture audio input from the user and convert to text."""
+    with sr.Microphone() as source:
         print("Listening...")
         audio = r_audio.listen(source, timeout=5, phrase_time_limit=8)
     try:
@@ -72,54 +71,69 @@ def listen():
         print(f"You said: {query}")
         return query.lower()
     except sr.UnknownValueError:
-        print("Could not understand audio.")
-        speak("I'm sorry, I couldn't understand you.")
+        print("Could not understand audio")
+        speak("I didn't catch that. Could you please repeat?")
         return ""
     except sr.RequestError:
-        print("Error with Google API")
-        speak("I'm sorry, due to technical issues, I can't respond right now.")
+        print("Error with the Google API")
+        speak("Sorry, there was an error with the Google API.")
         return ""
     except sr.WaitTimeoutError:
         print("No speech detected within the timeout period.")
         return ""
 
+# Enhanced Response Generation
 def gemini_search(query):
-    """Send the query to OpenAI GPT for processing."""
+    """Send the query to OpenAI Gemini for processing with improved error handling."""
     try:
         speak("Let me check that for you...")
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": query}],
-            max_tokens=100,
-            temperature=0.7
+            model="gpt-3.5-turbo",  # You can change the model if needed
+            messages=[
+                {"role": "system", "content": "You are Gemini, a helpful assistant."},
+                {"role": "user", "content": query},
+            ],
+            max_tokens=150,  # Increased max_tokens for more detailed responses
+            temperature=0.7,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
         )
-        return response['choices'][0]['message']['content'].strip()
+        return response["choices"][0]["message"]["content"].strip()
+    except openai.error.OpenAIError as e:
+        print(f"OpenAI API Error: {e}")
+        return "I'm sorry, I encountered an issue with the OpenAI API. Please try again later."
     except Exception as e:
-        print("Error:", e)
-        return "I'm sorry, I couldn't fetch an answer right now."
+        print(f"An unexpected error occurred: {e}")
+        return "I'm sorry, I couldn't fetch an answer right now due to an unexpected error."
 
+# Dynamic Responses and Greetings
 def dynamic_greeting():
-    """Generate a greeting based on the time of day."""
-    current_hour = datetime.now().hour
-    if current_hour < 12:
-        return "Good morning! How can I assist you today?"
-    elif current_hour < 18:
-        return "Good afternoon! What can I do for you?"
+    """Generate a time-based greeting."""
+    hour = datetime.now().hour
+    if hour < 12:
+        return "Good morning!"
+    elif hour < 18:
+        return "Good afternoon!"
     else:
-        return "Good evening! What can I help you with?"
-
+        return "Good evening!"
 
 def dynamic_response(phrase_type):
-    """ Generates a random dynamic reponse"""
+    """Generate a random dynamic response."""
     responses = {
-        "greeting" : ["Hi, there!", "Hello!", "Hey!", "Hey, good to see you back!"],
-        "acknowledge" : ["Got it!", "Sure thing!", "Understood!", "Alright!"],
-        "ask_followup" : ["Is there anything else I can help with?", "Would you like to know more?", "What else can I assist you with?"]
+        "greeting": ["Hi there!", "Hello!", "Hey, how's it going?"],
+        "acknowledge": ["Sure!", "Got it!", "Okay!", "Alright!"],
+        "ask_followup": [
+            "Would you like to know more?",
+            "Anything else I can help with?",
+            "Need further assistance?",
+        ],
     }
     return random.choice(responses.get(phrase_type, [""]))
 
+# To-Do List Management
 def manage_todo(query):
-    """Handles to-do list with better clarity and error handling."""
+    """Handle to-do list operations with improved clarity and error handling."""
     
     if "add" in query:
         speak("What task would you like to add?")
@@ -162,6 +176,7 @@ def manage_todo(query):
     else:
         return "I didn't understand your request for the to-do list. You can add, show, remove, or clear tasks."
 
+# Query Processing and Command Handling
 def process_query(query):
     """Process user query, handle commands, or send to Gemini."""
         
@@ -201,6 +216,7 @@ def process_query(query):
     else:
         return gemini_search(query)
 
+# Main Program Logic
 def gemini_main():
     """Main function to run the Gemini virtual assistant."""
     print("Gemini is running... Say 'bye' to stop.")
@@ -215,7 +231,7 @@ def gemini_main():
         if "bye" in query:
             speak("Goodbye! Have a great day.")
             save_context()
-            break
+            break   
 
         response = process_query(query)
         print(f"Gemini: {response}")
