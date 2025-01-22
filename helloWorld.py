@@ -83,7 +83,7 @@ def listen():
         print("No speech detected within the timeout period.")
         return ""
 
-def gpt_search(query):
+def gemini_search(query):
     """Send the query to OpenAI GPT for processing."""
     try:
         speak("Let me check that for you...")
@@ -163,71 +163,72 @@ def manage_todo(query):
         return "I didn't understand your request for the to-do list. You can add, show, remove, or clear tasks."
 
 def process_query(query):
-    """Process the user query and handle commands."""
-    global to_do_list
-
-    # Handles To-Do List Commands
-    if any(keyword in query.lower() for keyword in ["to-do", "task", "list"]):
+    """Process user query, handle commands, or send to Gemini."""
+        
+    if any(word in query for word in ["to-do", "task", "list"]):
         return manage_todo(query)
 
-    # Checks for specific commands
-    if "time" in query.lower():
-        speak("Fetching the current time...")
+    # Keyword-based actions
+    if "time" in query:
         current_time = datetime.now().strftime("%I:%M %p")
-        return f"The current time is {current_time}."
-    elif "date" in query.lower():
-        speak("Fetching today's date...")
+        return f"The time is {current_time}."
+    elif "date" in query:
         current_date = datetime.now().strftime("%A, %B %d, %Y")
         return f"Today is {current_date}."
-    elif "your name" in query.lower():
-        speak("I am Jarvis, your virtual assistant.")
-        return "I am Jarvis, your virtual assistant."
-    elif "how are you" in query.lower():
-        return "I'm doing great, thanks for asking!"
-    elif "name" in query.lower():
-        speak("What’s your name?")
-        context["name"] = listen()
-        return f"Nice to meet you, {context['name']}!"
-    elif "location" in query.lower():
-        speak("Where are you located?")
-        context["location"] = listen()
-        return f"Got it! You're located in {context['location']}."
+    elif "your name" in query:
+        return "I am Gemini, your virtual assistant."
+    elif "how are you" in query:
+        return "I'm doing well, thanks for asking!"
+    elif "my name" in query and data["context"]["name"]:
+        return f"Your name is {data['context']['name']}."
+    elif "my name" in query:
+        speak("What's your name?")
+        data["context"]["name"] = listen()
+        if data["context"]["name"]:
+            return f"Nice to meet you, {data['context']['name']}!"
+        else:
+            return "I didn't catch your name."
+    elif "location" in query:
+        speak("What's your location?")
+        data["context"]["location"] = listen()
+        if data["context"]["location"]:
+            return f"Got it. You're in {data['context']['location']}."
+        else:
+            return "I didn't catch your location."
+    elif "tell me more" in query and data["context"]["last_query"]:
+        # Fetch additional information about the last query
+        return gemini_search(f"Tell me more about: {data['context']['last_query']}")
     else:
-        return gpt_search(query)
+        return gemini_search(query)
 
-def jarvis_main():
-    """Main function to run the virtual assistant."""
-    print("Jarvis is running... Say 'exit' to stop.")
-    load_context() 
-    speak(dynamic_greeting()) 
+def gemini_main():
+    """Main function to run the Gemini virtual assistant."""
+    print("Gemini is running... Say 'bye' to stop.")
+    load_context()
+    speak(f"{dynamic_greeting()} I'm Gemini. How can I help you?")
 
     while True:
         query = listen()
-        if query:
-            if "exit" in query.lower():
-                save_context()  
-                speak("Goodbye! Take care.")
-                break
+        if not query:
+            continue
 
-            
-            response = process_query(query)
-            print("Jarvis:", response)
-            speak(response)
-            
-            # Follow-up questions based on context
-            if "weather" in query.lower() or "time" in query.lower():
-                follow_up = dynamic_response("ask_followup")
-                print(f"Jarvis: {follow_up}")
-                speak(follow_up)
+        if "bye" in query:
+            speak("Goodbye! Have a great day.")
+            save_context()
+            break
 
-            context["last_query"] = query
+        response = process_query(query)
+        print(f"Gemini: {response}")
+        speak(response)
 
-            if "more" in query.lower() or "tell me more" in query.lower():
-                if context["last_query"]:
-                    response = gpt_search(context["last_query"])
-                    print("Jarvis:", response)
-                    speak(response)
+        # Offer follow-up for specific queries
+        if any(word in query for word in ["weather", "time"]):
+            follow_up = dynamic_response("ask_followup")
+            print(f"Gemini: {follow_up}")
+            speak(follow_up)
+
+        data["context"]["last_query"] = query
 
 # Run the assistant
 if __name__ == "__main__":
-    jarvis_main()
+    gemini_main()
