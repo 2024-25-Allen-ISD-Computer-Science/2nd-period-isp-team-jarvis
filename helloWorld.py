@@ -6,6 +6,9 @@ import spacy
 import json
 from datetime import datetime
 import os
+import google.generativeai as genai
+import time
+from google.api_core.exceptions import GoogleAPIError
 
 r_audio = sr.Recognizer()
 r_audio.energy_threshold = 4000
@@ -17,8 +20,11 @@ tts_engine.setProperty("volume", 1.0)
 
 nlp = spacy.load("en_core_web_sm")
 
-# Replace with your actual OpenAI API key
-openai.api_key = "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"
+# Gemini API Configuration
+with open("api_key.txt", "r") as file:
+    api_key = file.read().strip()
+
+genai.configure(api_key=api_key)
 
 # Global variables using a dictionary for better organization
 data = {
@@ -83,29 +89,36 @@ def listen():
         return ""
 
 # Enhanced Response Generation
-def jarvis_search(query):
-    """Send the query to OpenAI jarvis for processing with improved error handling."""
-    try:
-        speak("Let me check that for you...")
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # You can change the model if needed
-            messages=[
-                {"role": "system", "content": "You are jarvis, a helpful assistant."},
-                {"role": "user", "content": query},
-            ],
-            max_tokens=150,  # Increased max_tokens for more detailed responses
-            temperature=0.7,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-        )
-        return response["choices"][0]["message"]["content"].strip()
-    except openai.error.OpenAIError as e:
-        print(f"OpenAI API Error: {e}")
-        return "I'm sorry, I encountered an issue with the OpenAI API. Please try again later."
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return "I'm sorry, I couldn't fetch an answer right now due to an unexpected error."
+def jarvis_search(query, retry_delay=5, max_retries=3):
+    """Sends a query to Gemini, handling retries and timeouts."""
+    retries = 0
+    while retries < max_retries:
+        try:
+            speak("Let me check that for you...")
+
+            model = genai.GenerativeModel("gemini-1.5-pro")
+
+            response = model.generate_content(f"""
+                You are Jarvis, a helpful assistant.
+                {query}
+            """)
+            return response.text
+
+        except GoogleAPIError as e:
+            print(f"Network error: {e}. Retrying in {retry_delay} seconds...")
+            retries += 1
+            time.sleep(retry_delay)
+
+        except AttributeError:
+            print("The response format might have changed. Please check the API documentation.")
+            return "I'm sorry, there is an issue with the API integration."
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return "I'm sorry, I encountered an issue and couldn't process your request."
+
+    print(f"Failed to get a response after {max_retries} retries.")
+    return "I'm sorry, I couldn't get a response right now. Please try again later."
 
 # Dynamic Responses and Greetings
 def dynamic_greeting():
