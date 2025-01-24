@@ -65,7 +65,7 @@ def listen():
     """Capture audio input from the user and convert to text."""
     with sr.Microphone() as source:
         print("Listening...")
-        audio = r_audio.listen(source, timeout=5, phrase_time_limit=8)
+        audio = r_audio.listen(source, phrase_time_limit=8)
     try:
         query = r_audio.recognize_google(audio, language="en-US")
         print(f"You said: {query}")
@@ -83,14 +83,14 @@ def listen():
         return ""
 
 # Enhanced Response Generation
-def gemini_search(query):
-    """Send the query to OpenAI Gemini for processing with improved error handling."""
+def jarvis_search(query):
+    """Send the query to OpenAI jarvis for processing with improved error handling."""
     try:
         speak("Let me check that for you...")
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",  # You can change the model if needed
             messages=[
-                {"role": "system", "content": "You are Gemini, a helpful assistant."},
+                {"role": "system", "content": "You are jarvis, a helpful assistant."},
                 {"role": "user", "content": query},
             ],
             max_tokens=150,  # Increased max_tokens for more detailed responses
@@ -178,7 +178,7 @@ def manage_todo(query):
 
 # Query Processing and Command Handling
 def process_query(query):
-    """Process user query, handle commands, or send to Gemini."""
+    """Process user query, handle commands, or send to jarvis."""
         
     if any(word in query for word in ["to-do", "task", "list"]):
         return manage_todo(query)
@@ -191,7 +191,7 @@ def process_query(query):
         current_date = datetime.now().strftime("%A, %B %d, %Y")
         return f"Today is {current_date}."
     elif "your name" in query:
-        return "I am Gemini, your virtual assistant."
+        return "I am jarvis, your virtual assistant."
     elif "how are you" in query:
         return "I'm doing well, thanks for asking!"
     elif "my name" in query and data["context"]["name"]:
@@ -212,16 +212,16 @@ def process_query(query):
             return "I didn't catch your location."
     elif "tell me more" in query and data["context"]["last_query"]:
         # Fetch additional information about the last query
-        return gemini_search(f"Tell me more about: {data['context']['last_query']}")
+        return jarvis_search(f"Tell me more about: {data['context']['last_query']}")
     else:
-        return gemini_search(query)
+        return jarvis_search(query)
 
 # Main Program Logic
-def gemini_main():
-    """Main function to run the Gemini virtual assistant."""
-    print("Gemini is running... Say 'bye' to stop.")
+def jarvis_main():
+    """Main function to run the jarvis virtual assistant."""
+    print("jarvis is running... Say 'bye' to stop.")
     load_context()
-    speak(f"{dynamic_greeting()} I'm Gemini. How can I help you?")
+    speak(f"{dynamic_greeting()} I'm jarvis. How can I help you?")
 
     while True:
         query = listen()
@@ -234,17 +234,17 @@ def gemini_main():
             break   
 
         response = process_query(query)
-        print(f"Gemini: {response}")
+        print(f"jarvis: {response}")
         speak(response)
 
         # Offer follow-up for specific queries
         if any(word in query for word in ["weather", "time"]):
             follow_up = dynamic_response("ask_followup")
-            print(f"Gemini: {follow_up}")
+            print(f"jarvis: {follow_up}")
             speak(follow_up)
 
         data["context"]["last_query"] = query
 
 # Run the assistant
 if __name__ == "__main__":
-    gemini_main()
+    jarvis_main()
