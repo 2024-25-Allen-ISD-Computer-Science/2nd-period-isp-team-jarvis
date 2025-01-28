@@ -1,0 +1,5 @@
+import calendar
+myYear = 2025
+myMonth = 1
+#the code below displays the calendar
+print(calendar.month(myYear,myMonth))
