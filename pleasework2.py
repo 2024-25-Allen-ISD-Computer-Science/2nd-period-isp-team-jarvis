@@ -50,6 +50,7 @@ class MainWindow(QMainWindow):
         self.button2.setStyleSheet("font-size: 25px;"
                                    #"background-color: blue;"
                                   "border-radius : 80;")
+        
         self.button3.setGeometry(250, 402, 161, 163)
         self.button3.hide
         self.button3.clicked.connect(self.list)
@@ -64,7 +65,7 @@ class MainWindow(QMainWindow):
                                    #"background-color: blue;"
                                    "border-radius: 80;")    
 
-        self.button5.setGeometry(405, 502, 161, 163)
+        self.button5.setGeometry(587, 483, 161, 163)
         self.button5.hide
         self.button5.clicked.connect(self.house)
         self.button5.setStyleSheet("font-size: 25px;"
