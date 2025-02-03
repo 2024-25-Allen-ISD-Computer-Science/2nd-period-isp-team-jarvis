@@ -1,0 +1,53 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QIcon, QFont, QColor, QPainter, QBrush
+
+class FaceIDWidget(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Window settings (transparent, frameless)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setGeometry(100, 100, 300, 300)  # Adjust size as needed
+
+        # Central widget for styling
+        self.central_widget = QLabel(self)
+        self.central_widget.setAlignment(Qt.AlignCenter)
+        self.central_widget.setStyleSheet("""
+            background-color: rgba(0, 0, 0, 200);
+            border-radius: 20px;
+        """)
+        self.setCentralWidget(self.central_widget)
+
+        # Lock icon
+        self.lock_icon = QLabel(self.central_widget)
+        self.lock_icon.setFont(QFont("Arial", 48))
+        self.lock_icon.setText("🔒")  # Locked icon
+        self.lock_icon.setAlignment(Qt.AlignCenter)
+        self.lock_icon.setGeometry(100, 100, 100, 100)
+
+        # Camera overlay effect (simulated)
+        self.camera_overlay = QLabel(self.central_widget)
+        self.camera_overlay.setStyleSheet("background-color: rgba(255, 255, 255, 30);")
+        self.camera_overlay.setGeometry(0, 0, 300, 300)
+
+        # Simulate Face ID scan
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.simulate_scan)
+        self.timer.start(2000)  # Start scan after 2 seconds
+
+    def simulate_scan(self):
+        self.timer.stop()
+        self.lock_icon.setText("🔓")  # Unlocked icon
+        self.camera_overlay.setStyleSheet("background-color: rgba(0, 255, 0, 30);")  # Green overlay
+        QTimer.singleShot(1000, self.close)  # Close after 1 second
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = FaceIDWidget()
+    window.show()
+    sys.exit(app.exec_())
