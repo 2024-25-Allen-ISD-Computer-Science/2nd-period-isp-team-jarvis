@@ -1,0 +1,64 @@
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton
+from PyQt5.QtGui import QMovie
+import sys
+
+class JarvisGUI(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Jarvis UI")
+        self.setGeometry(100, 100, 1200, 600)
+        self.setStyleSheet("background-color: black;")
+
+        # Background GIF (Scales to fit window)
+        self.bg_label = QLabel(self)
+        self.bg_label.setGeometry(0, 0, self.width(), self.height())  
+        self.bg_label.setScaledContents(True)  # Allows scaling
+
+        self.bg_movie = QMovie("kavish giff.gif")  # Use your file
+        self.bg_label.setMovie(self.bg_movie)
+        self.bg_movie.start()
+
+        # JARVIS Themed Enter Button
+        self.enter_button = QPushButton("ENTER", self)
+        self.enter_button.setGeometry(self.width() // 2 - 150, self.height() // 2 - 50, 300, 100)
+        self.enter_button.setStyleSheet("background-color: cyan; color: black; font-size: 24px; font-weight: bold; border-radius: 20px;")
+        self.enter_button.clicked.connect(self.open_new_screen)
+
+    def resizeEvent(self, event):
+        """ Ensure background scales dynamically and stays centered when window is resized """
+        self.bg_label.setGeometry(0, 0, self.width(), self.height())
+        self.enter_button.setGeometry(self.width() // 2 - 150, self.height() // 2 - 50, 300, 100)
+        super().resizeEvent(event)
+
+    def open_new_screen(self):
+        """ Close the current window and open a new screen with a GIF background """
+        self.close()  # Close the current window
+        self.new_window = QMainWindow()
+        self.new_window.setWindowTitle("Jarvis")
+        self.new_window.setGeometry(100, 100, 1200, 600)
+        self.new_window.setStyleSheet("background-color: black;")
+
+        # Set up the background GIF for the new window
+        self.new_bg_label = QLabel(self.new_window)
+        self.new_bg_label.setGeometry(0, 0, self.new_window.width(), self.new_window.height())
+        self.new_bg_label.setScaledContents(True)
+
+        self.new_bg_movie = QMovie("ABC.gif")  # Path to new GIF
+        self.new_bg_label.setMovie(self.new_bg_movie)
+        self.new_bg_movie.start()
+
+        # Ensure resizing works correctly
+        self.new_window.resizeEvent = self.new_resize_event  # Override resize event
+
+        self.new_window.show()
+
+    def new_resize_event(self, event):
+        """ Ensure new window background GIF scales dynamically and stays centered """
+        self.new_bg_label.setGeometry(0, 0, self.new_window.width(), self.new_window.height())
+        super(QMainWindow, self.new_window).resizeEvent(event)  # Correct call to the superclass
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    jarvis_ui = JarvisGUI()
+    jarvis_ui.show()
+    sys.exit(app.exec_())
