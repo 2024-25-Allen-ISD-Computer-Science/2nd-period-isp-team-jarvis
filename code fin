@@ -1,0 +1,96 @@
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFrame, QWidget
+from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtCore import Qt, QTimer
+import sys, math
+
+class MainInterface(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("J.A.R.V.I.S Interface")
+        self.setGeometry(100, 100, 800, 500)
+        self.setStyleSheet("background-color: black;")
+        
+        self.label = QLabel("WELCOME, SIR", self)
+        self.label.setFont(QFont("Arial", 20, QFont.Bold))
+        self.label.setStyleSheet("color: cyan;")
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setGeometry(200, 100, 400, 50)
+        
+        self.button = QPushButton("Get Started", self)
+        self.button.setFont(QFont("Arial", 14, QFont.Bold))
+        self.button.setStyleSheet("background-color: cyan; color: black; border-radius: 10px;")
+        self.button.setGeometry(350, 400, 100, 50)
+        self.button.clicked.connect(self.openFeatureWindow)
+        
+        self.show()
+    
+    def openFeatureWindow(self):
+        self.feature_window = FeatureWindow()
+        self.feature_window.show()
+        self.close()
+    
+class FeatureWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("J.A.R.V.I.S Features")
+        self.setGeometry(100, 100, 800, 500)
+        self.setStyleSheet("background-color: black;")
+        
+        self.logo_label = QLabel(self)
+        self.logo_label.setPixmap(QPixmap("jarvis_logo.png").scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.logo_label.setAlignment(Qt.AlignCenter)
+        
+        self.circle_frame = QFrame(self)
+        self.circle_frame.setStyleSheet("border: 2px solid cyan; border-radius: 200px;")
+        
+        self.features = ["Voice Recognition & Text-to-Speech", "Set up voice input/output", "Natural Language Processing", "Basic query understanding", "Task Management & Reminders"]
+        self.feature_labels = []
+        self.angle = 0
+        
+        for text in self.features:
+            label = QLabel(text, self)
+            label.setFont(QFont("Arial", 10))
+            label.setStyleSheet("color: cyan;")
+            label.setAlignment(Qt.AlignCenter)
+            self.feature_labels.append(label)
+        
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.rotateFeatures)
+        self.timer.start(50)
+        
+        self.updateLayout()
+        
+        self.show()
+    
+    def resizeEvent(self, event):
+        self.updateLayout()
+    
+    def updateLayout(self):
+        width, height = self.width(), self.height()
+        center_x, center_y = width // 2, height // 2
+        radius = min(width, height) // 4
+        
+        self.logo_label.setGeometry(center_x - 75, center_y - 75, 150, 150)
+        self.circle_frame.setGeometry(center_x - radius - 30, center_y - radius - 30, 2 * (radius + 30), 2 * (radius + 30))
+        
+        self.rotateFeatures()
+    
+    def rotateFeatures(self):
+        width, height = self.width(), self.height()
+        center_x, center_y = width // 2, height // 2
+        radius = min(width, height) // 4 + 30
+        self.angle += 2
+        
+        for i, label in enumerate(self.feature_labels):
+            angle_rad = math.radians(self.angle + i * (360 / len(self.feature_labels)))
+            x = center_x + radius * math.cos(angle_rad) - 75
+            y = center_y + radius * math.sin(angle_rad) - 15
+            label.setGeometry(int(x), int(y), 150, 30)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainInterface()
+    sys.exit(app.exec_())
